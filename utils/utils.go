@@ -25,7 +25,7 @@ func HttpGet(url string) ([]byte, error) {
 	return body, nil
 }
 
-func RemoveNonAlnum(s string) string {
+func StringAllowlist(s string) string {
 	valid := []*unicode.RangeTable{
 		unicode.Letter,
 		unicode.Digit,

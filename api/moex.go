@@ -35,21 +35,6 @@ type MoexSecurityParametersJSON struct {
 	} `json:"boards"`
 }
 
-type MoexHistoryEntry struct {
-	Date      time.Time       `json:"date"`
-	Close     decimal.Decimal `json:"close"`
-	High      decimal.Decimal `json:"high"`
-	Low       decimal.Decimal `json:"low"`
-	Volume    uint64          `json:"volume"`
-	Facevalue decimal.Decimal `json:"facevalue"`
-}
-
-type MoexHistoryEntries []MoexHistoryEntry
-
-func (entries MoexHistoryEntries) MarshalBinary() ([]byte, error) {
-	return json.Marshal(entries)
-}
-
 type MoexHistoryJSON struct {
 	History struct {
 		Columns []string        `json:"columns"`
@@ -64,20 +49,20 @@ func NewMoexAPI(redis utils.RedisClient) MoexAPI {
 	}
 }
 
-func (api *MoexAPI) GetTicker(ticker string) (MoexHistoryEntries, error) {
+func (api *MoexAPI) GetTicker(ticker string) (HistoryEntries, error) {
 	security, err := api.getSecurityParameters(ticker)
 	if err != nil {
 		log.Println(err)
-		return MoexHistoryEntries{}, err
+		return HistoryEntries{}, err
 	}
 
-	var history MoexHistoryEntries
+	var history HistoryEntries
 	offset := uint(0)
 	for {
 		entryHistory, err := api.getSecurityHistoryOffset(ticker, security, offset)
 		if err != nil {
 			log.Println(err)
-			return MoexHistoryEntries{}, err
+			return HistoryEntries{}, err
 		}
 		if len(entryHistory) == 0 {
 			break
@@ -164,38 +149,38 @@ func (api *MoexAPI) getSecurityParameters(ticker string) (MoexSecurityParameters
 	return output, err
 }
 
-func (api *MoexAPI) getSecurityHistoryOffsetFromCache(key string) (MoexHistoryEntries, error) {
+func (api *MoexAPI) getSecurityHistoryOffsetFromCache(key string) (HistoryEntries, error) {
 	log.Printf("Getting history data from cache for %s\n", key)
 	data, err := api.Redis.Client.Get(api.Redis.Context, key).Bytes()
 	if err != nil {
 		log.Printf("Got no history data from cache for %s\n", key)
-		return MoexHistoryEntries{}, err
+		return HistoryEntries{}, err
 	}
 
 	log.Printf("Got history data from cache for %s\n", key)
-	var moexHistory MoexHistoryEntries
+	var moexHistory HistoryEntries
 	err = json.Unmarshal(data, &moexHistory)
 	if err != nil {
-		return MoexHistoryEntries{}, err
+		return HistoryEntries{}, err
 	}
 
 	return moexHistory, nil
 }
 
-func (api *MoexAPI) setSecurityHistoryOffsetToCache(key string, value MoexHistoryEntries) error {
+func (api *MoexAPI) setSecurityHistoryOffsetToCache(key string, value HistoryEntries) error {
 	log.Printf("Saving history data to cache for %s\n", key)
 	return api.Redis.Client.Set(api.Redis.Context, key, value, 0).Err()
 }
 
 func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 	params MoexSecurityParameters,
-	offset uint) (MoexHistoryEntries, error) {
+	offset uint) (HistoryEntries, error) {
 	url := fmt.Sprintf("%s/iss/history/engines/%s/markets/%s/boards/%s/"+
 		"securities/%s.json?iss.meta=off&start=%d&history.columns=TRADEDATE"+
 		",CLOSE,HIGH,LOW,VOLUME,FACEVALUE",
 		api.BaseURL, params.Engine, params.Market, params.Board, ticker, offset)
 
-	var moexHistory MoexHistoryEntries
+	var moexHistory HistoryEntries
 	var cacheKey string
 
 	if api.Redis.Client != nil {
@@ -209,26 +194,26 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 	log.Printf("Fetching history data from url %s for %s\n", url, ticker)
 	data, err := utils.HttpGet(url)
 	if err != nil {
-		return MoexHistoryEntries{}, err
+		return HistoryEntries{}, err
 	}
 
 	var moexHistoryJSON MoexHistoryJSON
 	err = json.Unmarshal(data, &moexHistoryJSON)
 	if err != nil {
-		return MoexHistoryEntries{}, err
+		return HistoryEntries{}, err
 	}
 
 	if len(moexHistoryJSON.History.Data) == 0 {
 		// end of data
-		return MoexHistoryEntries{}, nil
+		return HistoryEntries{}, nil
 	}
 
-	moexHistory = make(MoexHistoryEntries, len(moexHistoryJSON.History.Data))
+	moexHistory = make(HistoryEntries, len(moexHistoryJSON.History.Data))
 
 	for i, entry := range moexHistoryJSON.History.Data {
 		time, err := time.Parse("2006-01-02", entry[0].(string))
 		if err != nil {
-			return MoexHistoryEntries{}, err
+			return HistoryEntries{}, err
 		}
 		moexHistory[i].Date = time
 
@@ -256,7 +241,7 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 		if len(moexHistory)%PAGE_SIZE == 0 {
 			err = api.setSecurityHistoryOffsetToCache(cacheKey, moexHistory)
 			if err != nil {
-				return MoexHistoryEntries{}, err
+				return HistoryEntries{}, err
 			}
 		}
 	}

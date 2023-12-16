@@ -43,34 +43,36 @@ func init() {
 func SanitizedParam(c *gin.Context, param string) string {
 	out := c.Param(param)
 	out = strings.ToLower(out)
-	return utils.RemoveNonAlnum(out)
+	return utils.StringAllowlist(out)
 }
 
-func moexGetTicker(c *gin.Context) {
+func getBaseTicker(c *gin.Context, apiGetTicker func(string) (api.HistoryEntries, error)) {
 	ticker := SanitizedParam(c, "ticker")
-	data, err := MoexAPI.GetTicker(ticker)
+	data, err := apiGetTicker(ticker)
 	if err != nil {
 		if err == custom_errors.ErrorNotFound {
+			log.Println(err)
 			c.JSON(http.StatusNotFound, gin.H{
 				"status": "not found",
 			})
+			return
 		} else {
+			log.Println(err)
 			c.JSON(http.StatusBadRequest, gin.H{
 				"status": "bad request",
 			})
 		}
 		return
 	}
-
 	c.JSON(http.StatusOK, data)
 }
 
+func moexGetTicker(c *gin.Context) {
+	getBaseTicker(c, MoexAPI.GetTicker)
+}
+
 func spbexGetTicker(c *gin.Context) {
-	ticker := SanitizedParam(c, "ticker")
-	c.JSON(http.StatusOK, gin.H{
-		"status": "ok",
-		"data":   ticker,
-	})
+	getBaseTicker(c, SpbexAPI.GetTicker)
 }
 
 func healthCheck(c *gin.Context) {
@@ -88,5 +90,5 @@ func mountRoutes(app *gin.Engine) {
 func main() {
 	r := gin.Default()
 	mountRoutes(r)
-	r.Run()
+	log.Fatalln(r.Run())
 }
