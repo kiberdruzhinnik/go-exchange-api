@@ -64,7 +64,7 @@ func (api *MoexAPI) GetTicker(ticker string) (HistoryEntries, error) {
 			log.Println(err)
 			return HistoryEntries{}, err
 		}
-		if len(entryHistory) == 0 {
+		if len(entryHistory) == 0 || len(entryHistory) != PAGE_SIZE {
 			break
 		}
 		offset += PAGE_SIZE
@@ -167,9 +167,10 @@ func (api *MoexAPI) getSecurityHistoryOffsetFromCache(key string) (HistoryEntrie
 	return moexHistory, nil
 }
 
-func (api *MoexAPI) setSecurityHistoryOffsetToCache(key string, value HistoryEntries) error {
-	log.Printf("Saving history data to cache for %s\n", key)
-	return api.Redis.Client.Set(api.Redis.Context, key, value, 0).Err()
+func (api *MoexAPI) setSecurityHistoryOffsetToCache(key string,
+	value HistoryEntries, duration time.Duration) error {
+	log.Printf("Saving history data to cache for %s for %d seconds\n", key, uint64(duration.Seconds()))
+	return api.Redis.Client.Set(api.Redis.Context, key, value, duration).Err()
 }
 
 func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
@@ -237,11 +238,17 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 	}
 
 	if api.Redis.Client != nil {
+		var duration time.Duration
 		if len(moexHistory)%PAGE_SIZE == 0 {
-			err = api.setSecurityHistoryOffsetToCache(cacheKey, moexHistory)
-			if err != nil {
-				return HistoryEntries{}, err
-			}
+			// forever
+			duration = time.Duration(0)
+
+		} else {
+			duration = time.Hour * 3
+		}
+		err = api.setSecurityHistoryOffsetToCache(cacheKey, moexHistory, duration)
+		if err != nil {
+			return HistoryEntries{}, err
 		}
 	}
 

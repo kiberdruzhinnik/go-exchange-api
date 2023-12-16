@@ -29,8 +29,8 @@ func init() {
 		redisClient = client
 	}
 
-	loggingEnabled := os.Getenv("EXCHANGE_API_VERBOSE")
-	if len(loggingEnabled) == 0 {
+	loggingDisabled := os.Getenv("GIN_MODE") == "release"
+	if loggingDisabled {
 		log.SetOutput(io.Discard)
 	} else {
 		log.Println("Verbose logging enabled")
