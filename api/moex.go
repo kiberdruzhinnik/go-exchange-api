@@ -181,10 +181,9 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 		api.BaseURL, params.Engine, params.Market, params.Board, ticker, offset)
 
 	var moexHistory HistoryEntries
-	var cacheKey string
+	cacheKey := fmt.Sprintf("%s-%s-%s-%s-%d", params.Board, params.Market, params.Engine, ticker, offset)
 
 	if api.Redis.Client != nil {
-		cacheKey := fmt.Sprintf("%s-%s-%s-%s-%d", params.Board, params.Market, params.Engine, ticker, offset)
 		moexHistory, err := api.getSecurityHistoryOffsetFromCache(cacheKey)
 		if err == nil {
 			return moexHistory, nil
