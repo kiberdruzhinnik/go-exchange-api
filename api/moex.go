@@ -244,7 +244,10 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 			duration = time.Duration(0)
 
 		} else {
-			duration = time.Hour * 3
+			// cache until tomorrow
+			now := time.Now().UTC()
+			tomorrow := time.Date(now.Year(), now.Month(), now.Day()+1, 0, 0, 0, 0, time.UTC)
+			duration = tomorrow.Sub(now)
 		}
 		err = api.setSecurityHistoryOffsetToCache(cacheKey, moexHistory, duration)
 		if err != nil {
