@@ -5,7 +5,6 @@ go 1.21.5
 require (
 	github.com/gin-gonic/gin v1.9.1
 	github.com/redis/go-redis/v9 v9.3.0
-	github.com/shopspring/decimal v1.3.1
 )
 
 require (

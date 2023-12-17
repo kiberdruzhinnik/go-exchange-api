@@ -8,7 +8,6 @@ import (
 
 	custom_errors "github.com/kiberdruzhinnik/go-exchange-api/errors"
 	"github.com/kiberdruzhinnik/go-exchange-api/utils"
-	"github.com/shopspring/decimal"
 )
 
 const PAGE_SIZE = 100
@@ -125,7 +124,6 @@ func (api *MoexAPI) getSecurityParameters(ticker string) (MoexSecurityParameters
 		return MoexSecurityParameters{}, custom_errors.ErrorCouldNotParseJSON
 	}
 
-	// var output MoexSecurityParameters
 	for _, entry := range moexJson.Boards.Data {
 		isPrimary := int(entry[3].(float64))
 		if isPrimary == 1 {
@@ -220,9 +218,10 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 		if entry[1] == nil || entry[2] == nil || entry[3] == nil {
 			continue
 		}
-		moexHistory[i].Close = decimal.NewFromFloat(entry[1].(float64))
-		moexHistory[i].High = decimal.NewFromFloat(entry[2].(float64))
-		moexHistory[i].Low = decimal.NewFromFloat(entry[3].(float64))
+
+		moexHistory[i].Close = entry[1].(float64)
+		moexHistory[i].High = entry[2].(float64)
+		moexHistory[i].Low = entry[3].(float64)
 
 		if len(entry) > 4 {
 			moexHistory[i].Volume = uint64(entry[4].(float64))
@@ -231,9 +230,9 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 		}
 
 		if len(entry) > 5 {
-			moexHistory[i].Facevalue = decimal.NewFromFloat(entry[5].(float64))
+			moexHistory[i].Facevalue = entry[5].(float64)
 		} else {
-			moexHistory[i].Facevalue = decimal.Zero
+			moexHistory[i].Facevalue = 1.0
 		}
 	}
 

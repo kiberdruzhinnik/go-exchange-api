@@ -8,7 +8,6 @@ import (
 
 	custom_errors "github.com/kiberdruzhinnik/go-exchange-api/errors"
 	"github.com/kiberdruzhinnik/go-exchange-api/utils"
-	"github.com/shopspring/decimal"
 )
 
 type SpbexAPI struct {
@@ -47,11 +46,11 @@ func (api *SpbexAPI) GetTicker(ticker string) (HistoryEntries, error) {
 
 		entry := HistoryEntry{
 			Date:      api.parseTime(int64(jsonHistory.Time[i])),
-			Close:     decimal.NewFromFloat(jsonHistory.Close[i]),
-			High:      decimal.NewFromFloat(jsonHistory.High[i]),
-			Low:       decimal.NewFromFloat(jsonHistory.Low[i]),
+			Close:     jsonHistory.Close[i],
+			High:      jsonHistory.High[i],
+			Low:       jsonHistory.Low[i],
 			Volume:    0,
-			Facevalue: decimal.Zero,
+			Facevalue: 1.0,
 		}
 		historyEntries[i] = entry
 	}
