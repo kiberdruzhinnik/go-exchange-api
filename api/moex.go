@@ -63,7 +63,13 @@ func (api *MoexAPI) GetTicker(ticker string) (HistoryEntries, error) {
 			log.Println(err)
 			return HistoryEntries{}, err
 		}
-		if len(entryHistory) == 0 || len(entryHistory) != PAGE_SIZE {
+		// last entry
+		if len(entryHistory) == 0 {
+			break
+		}
+		// last entry but contains data
+		if len(entryHistory) != PAGE_SIZE {
+			history = append(history, entryHistory...)
 			break
 		}
 		offset += PAGE_SIZE
