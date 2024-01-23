@@ -37,7 +37,7 @@ volumes:
 ## Как проверить
 
 ```bash
-curl http://localhost/moex/sber | jq
+curl http://localhost:8080/moex/sber | jq
 ```
 
 ![Test](images/image-3.png)
