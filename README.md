@@ -29,6 +29,8 @@ services:
       EXCHANGE_API_REDIS: redis://redis-cache:6379/0
     ports:
       - 8080:8080/tcp
+    depends_on:
+      - redis-cache
 
 volumes:
   redis: 
