@@ -29,6 +29,8 @@ services:
       EXCHANGE_API_REDIS: redis://redis-cache:6379/0
     ports:
       - 8080:8080/tcp
+    depends_on:
+      - redis-cache
 
 volumes:
   redis: 
@@ -37,7 +39,7 @@ volumes:
 ## Как проверить
 
 ```bash
-curl http://localhost/moex/sber | jq
+curl http://localhost:8080/moex/sber | jq
 ```
 
 ![Test](images/image-3.png)
