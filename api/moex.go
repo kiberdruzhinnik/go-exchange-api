@@ -41,6 +41,25 @@ type MoexHistoryJSON struct {
 	} `json:"history"`
 }
 
+type MoexPriceJSON struct {
+	Securities struct {
+		Columns []string `json:"columns"`
+		Data    [][]any  `json:"data"`
+	} `json:"securities"`
+	Marketdata struct {
+		Columns []string `json:"columns"`
+		Data    [][]any  `json:"data"`
+	} `json:"marketdata"`
+	Dataversion struct {
+		Columns []string `json:"columns"`
+		Data    [][]any  `json:"data"`
+	} `json:"dataversion"`
+	MarketdataYields struct {
+		Columns []string `json:"columns"`
+		Data    []any    `json:"data"`
+	} `json:"marketdata_yields"`
+}
+
 func NewMoexAPI(redis utils.RedisClient) MoexAPI {
 	return MoexAPI{
 		BaseURL: "https://iss.moex.com",
@@ -74,6 +93,15 @@ func (api *MoexAPI) GetTicker(ticker string) (HistoryEntries, error) {
 		}
 		offset += PAGE_SIZE
 		history = append(history, entryHistory...)
+	}
+
+	currentPrice, err := api.getSecurityCurrentPrice(ticker, security)
+	if err == nil {
+		history = append(history, currentPrice)
+		if len(history) > 1 {
+			history[len(history)-1].Facevalue = history[len(history)-2].Facevalue
+		}
+
 	}
 
 	return history, err
@@ -263,4 +291,47 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 	}
 
 	return moexHistory, nil
+}
+
+func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityParameters) (HistoryEntry, error) {
+	url := fmt.Sprintf(
+		"%s/iss/engines/%s/markets/%s/securities/%s.json?iss.meta=off&marketdata.columns=BOARDID,LAST,HIGH,LOW",
+		api.BaseURL, params.Engine, params.Market, ticker,
+	)
+	log.Printf("Fetching price data from url %s for %s\n", url, ticker)
+	data, err := utils.HttpGet(url)
+	if err != nil {
+		return HistoryEntry{}, err
+	}
+
+	var moexPriceJSON MoexPriceJSON
+	err = json.Unmarshal(data, &moexPriceJSON)
+	if err != nil {
+		return HistoryEntry{}, err
+	}
+
+	for _, entry := range moexPriceJSON.Marketdata.Data {
+		if entry[0] == params.Board {
+			if entry[1] == nil {
+				return HistoryEntry{}, custom_errors.ErrorNoData
+			}
+			var moexHistory HistoryEntry
+			moexHistory.Close = entry[1].(float64)
+
+			if entry[2] != nil {
+				moexHistory.High = entry[2].(float64)
+			}
+
+			if entry[3] != nil {
+				moexHistory.Low = entry[3].(float64)
+			}
+
+			moexHistory.Date = time.Now().UTC()
+
+			return moexHistory, nil
+		}
+	}
+
+	return HistoryEntry{}, custom_errors.ErrorNotFound
+
 }
