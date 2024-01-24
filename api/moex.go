@@ -42,22 +42,10 @@ type MoexHistoryJSON struct {
 }
 
 type MoexPriceJSON struct {
-	Securities struct {
-		Columns []string `json:"columns"`
-		Data    [][]any  `json:"data"`
-	} `json:"securities"`
 	Marketdata struct {
 		Columns []string `json:"columns"`
 		Data    [][]any  `json:"data"`
 	} `json:"marketdata"`
-	Dataversion struct {
-		Columns []string `json:"columns"`
-		Data    [][]any  `json:"data"`
-	} `json:"dataversion"`
-	MarketdataYields struct {
-		Columns []string `json:"columns"`
-		Data    []any    `json:"data"`
-	} `json:"marketdata_yields"`
 }
 
 func NewMoexAPI(redis utils.RedisClient) MoexAPI {
@@ -295,7 +283,7 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 
 func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityParameters) (HistoryEntry, error) {
 	url := fmt.Sprintf(
-		"%s/iss/engines/%s/markets/%s/securities/%s.json?iss.meta=off&marketdata.columns=BOARDID,LAST,HIGH,LOW",
+		"%s/iss/engines/%s/markets/%s/securities/%s.json?iss.meta=off&iss.only=marketdata&marketdata.columns=BOARDID,LAST,HIGH,LOW",
 		api.BaseURL, params.Engine, params.Market, ticker,
 	)
 	log.Printf("Fetching price data from url %s for %s\n", url, ticker)
