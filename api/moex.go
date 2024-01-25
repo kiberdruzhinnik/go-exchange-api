@@ -283,7 +283,7 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 
 func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityParameters) (HistoryEntry, error) {
 	url := fmt.Sprintf(
-		"%s/iss/engines/%s/markets/%s/securities/%s.json?iss.meta=off&iss.only=marketdata&marketdata.columns=BOARDID,LAST,HIGH,LOW",
+		"%s/iss/engines/%s/markets/%s/securities/%s.json?iss.meta=off&iss.only=marketdata&marketdata.columns=BOARDID,LAST,HIGH,LOW,VOLTODAY",
 		api.BaseURL, params.Engine, params.Market, ticker,
 	)
 	log.Printf("Fetching price data from url %s for %s\n", url, ticker)
@@ -312,6 +312,12 @@ func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityPa
 
 			if entry[3] != nil {
 				moexHistory.Low = entry[3].(float64)
+			}
+
+			if len(entry) > 4 && entry[4] != nil {
+				moexHistory.Volume = uint64(entry[4].(float64))
+			} else {
+				moexHistory.Volume = 0
 			}
 
 			moexHistory.Date = time.Now().UTC()
