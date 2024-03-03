@@ -26,6 +26,12 @@ services:
     image: redis:7-alpine
     volumes:
       - redis:/data
+    healthcheck:
+      test: [ "CMD-SHELL", "redis-cli ping | grep PONG" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
   exchange-api:
     image: kotasha/go-exchange-api:latest
@@ -35,9 +41,15 @@ services:
       - 8080:8080/tcp
     depends_on:
       - redis-cache
+    healthcheck:
+      test: [ "CMD-SHELL", "./healthcheck" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
 volumes:
-  redis: 
+  redis:
 ```
 
 ## Как проверить
