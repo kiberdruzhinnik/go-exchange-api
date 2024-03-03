@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/kiberdruzhinnik/go-exchange-api/constants"
 	custom_errors "github.com/kiberdruzhinnik/go-exchange-api/errors"
 	"github.com/kiberdruzhinnik/go-exchange-api/utils"
 )
@@ -50,7 +51,7 @@ type MoexPriceJSON struct {
 
 func NewMoexAPI(redis utils.RedisClient) MoexAPI {
 	return MoexAPI{
-		BaseURL: "https://iss.moex.com",
+		BaseURL: constants.MoexBaseApiURL,
 		Redis:   redis,
 	}
 }

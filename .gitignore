@@ -1,2 +1,3 @@
 go-exchange-api
 redis
+!cmd/*

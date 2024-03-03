@@ -6,6 +6,7 @@ import (
 	"log"
 	"time"
 
+	"github.com/kiberdruzhinnik/go-exchange-api/constants"
 	custom_errors "github.com/kiberdruzhinnik/go-exchange-api/errors"
 	"github.com/kiberdruzhinnik/go-exchange-api/utils"
 )
@@ -30,7 +31,7 @@ type SpbexSecurityJSON struct {
 
 func NewSpbexAPI() SpbexAPI {
 	return SpbexAPI{
-		BaseURL: "https://investcab.ru/api",
+		BaseURL: constants.SpbexBaseApiURL,
 	}
 }
 

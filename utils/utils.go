@@ -5,9 +5,31 @@ import (
 	"net/http"
 	"strings"
 	"unicode"
+
+	"github.com/kiberdruzhinnik/go-exchange-api/constants"
+	"github.com/kiberdruzhinnik/go-exchange-api/errors"
 )
 
+var URLS_ALLOW_LIST []string = []string{
+	constants.MoexBaseApiURL,
+	constants.SpbexBaseApiURL,
+}
+
+func CheckSafeURL(url string) bool {
+	for _, u := range URLS_ALLOW_LIST {
+		if strings.HasPrefix(url, u) {
+			return true
+		}
+	}
+	return false
+}
+
 func HttpGet(url string) ([]byte, error) {
+
+	if !CheckSafeURL(url) {
+		return nil, errors.ErrorNotAllowed
+	}
+
 	resp, err := http.Get(url)
 
 	if err != nil {
