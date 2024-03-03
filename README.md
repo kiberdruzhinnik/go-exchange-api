@@ -2,6 +2,10 @@
 
 Проект для получения данных с бирж MOEX и SPBEX для использования с [Portfolio-Performance](https://www.portfolio-performance.info/).
 
+## Видео об этом
+
+[![Portfolio Performance](https://img.youtube.com/vi/L4K1NdUF1Ic/0.jpg)](https://www.youtube.com/watch?v=L4K1NdUF1Ic)
+
 ## Ограничения
 
 Для биржи Moex требуется использовать Redis для кеширования истории цен. Также для нее данные запаздывают на 20 минут относительно торгов.
