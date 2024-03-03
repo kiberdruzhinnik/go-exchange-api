@@ -21,7 +21,7 @@ services:
     depends_on:
       - redis-cache
     healthcheck:
-      test: [ "./healthcheck" ]
+      test: [ "CMD-SHELL", "./healthcheck" ]
       interval: 30s
       timeout: 10s
       retries: 3
