@@ -11,7 +11,8 @@ ENV GIN_MODE release
 WORKDIR /app
 COPY --from=builder /src/app/go-exchange-api ./go-exchange-api
 COPY --from=builder /src/app/healthcheck ./healthcheck
-RUN addgroup -S appgroup && \
+RUN apk update && \
+    addgroup -S appgroup && \
     adduser -S appuser -G appgroup
 USER appuser
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 CMD ["./healthcheck"]
