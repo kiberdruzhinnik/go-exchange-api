@@ -90,7 +90,10 @@ func (api *MoexAPI) GetTicker(ticker string) (HistoryEntries, error) {
 		if len(history) > 1 {
 			history[len(history)-1].Facevalue = history[len(history)-2].Facevalue
 		}
-
+	}
+	if err == custom_errors.ErrorNoData {
+		log.Println("No current price data. Returning only history data.")
+		err = nil
 	}
 
 	return history, err
