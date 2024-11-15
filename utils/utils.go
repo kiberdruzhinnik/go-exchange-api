@@ -3,6 +3,7 @@ package utils
 import (
 	"io"
 	"net/http"
+	"strconv"
 	"strings"
 	"unicode"
 
@@ -62,4 +63,24 @@ func StringAllowlist(s string) string {
 		},
 		s,
 	)
+}
+
+func GetFloat64(v interface{}) float64 {
+	if v == nil {
+		return 0
+	}
+
+	switch val := v.(type) {
+	case float64:
+		return val
+	case float32:
+		return float64(val)
+	case int:
+		return float64(val)
+	case string:
+		if f, err := strconv.ParseFloat(val, 64); err == nil {
+			return f
+		}
+	}
+	return 0
 }

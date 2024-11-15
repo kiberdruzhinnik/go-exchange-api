@@ -245,12 +245,12 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 			continue
 		}
 
-		moexHistory[i].Close = entry[1].(float64)
-		moexHistory[i].High = entry[2].(float64)
-		moexHistory[i].Low = entry[3].(float64)
+		moexHistory[i].Close = utils.GetFloat64(entry[1])
+		moexHistory[i].High = utils.GetFloat64(entry[2])
+		moexHistory[i].Low = utils.GetFloat64(entry[3].(float64))
 
 		if len(entry) > 4 {
-			moexHistory[i].Volume = uint64(entry[4].(float64))
+			moexHistory[i].Volume = uint64(utils.GetFloat64(entry[4]))
 		} else {
 			moexHistory[i].Volume = 0
 		}
@@ -308,18 +308,18 @@ func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityPa
 				return HistoryEntry{}, custom_errors.ErrorNoData
 			}
 			var moexHistory HistoryEntry
-			moexHistory.Close = entry[1].(float64)
+			moexHistory.Close = utils.GetFloat64(entry[1])
 
 			if entry[2] != nil {
-				moexHistory.High = entry[2].(float64)
+				moexHistory.High = utils.GetFloat64(entry[2].(float64))
 			}
 
 			if entry[3] != nil {
-				moexHistory.Low = entry[3].(float64)
+				moexHistory.Low = utils.GetFloat64(entry[3])
 			}
 
 			if len(entry) > 4 && entry[4] != nil {
-				moexHistory.Volume = uint64(entry[4].(float64))
+				moexHistory.Volume = uint64(utils.GetFloat64(entry[4]))
 			} else {
 				moexHistory.Volume = 0
 			}
