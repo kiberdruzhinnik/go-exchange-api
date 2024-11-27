@@ -15,6 +15,7 @@ import (
 
 var MoexAPI api.MoexAPI
 var SpbexAPI api.SpbexAPI
+var CbrAPI api.CbrAPI
 
 func init() {
 	var redisClient utils.RedisClient
@@ -38,6 +39,7 @@ func init() {
 
 	MoexAPI = api.NewMoexAPI(redisClient)
 	SpbexAPI = api.NewSpbexAPI()
+	CbrAPI = api.NewCbrAPI()
 }
 
 func SanitizedParam(c *gin.Context, param string) string {
@@ -76,6 +78,10 @@ func spbexGetTicker(c *gin.Context) {
 	getBaseTicker(c, SpbexAPI.GetTicker)
 }
 
+func cbrGetTicker(c *gin.Context) {
+	getBaseTicker(c, CbrAPI.GetTicker)
+}
+
 func healthCheck(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"status": "ok",
@@ -85,6 +91,7 @@ func healthCheck(c *gin.Context) {
 func mountRoutes(app *gin.Engine) {
 	app.GET("/moex/:ticker", moexGetTicker)
 	app.GET("/spbex/:ticker", spbexGetTicker)
+	app.GET("/cbr/:ticker", cbrGetTicker)
 	app.GET("/healthcheck", healthCheck)
 }
 

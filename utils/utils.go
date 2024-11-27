@@ -84,3 +84,12 @@ func GetFloat64(v interface{}) float64 {
 	}
 	return 0
 }
+
+func Contains(s map[string]string, e string) bool {
+	for k := range s {
+		if k == e {
+			return true
+		}
+	}
+	return false
+}
