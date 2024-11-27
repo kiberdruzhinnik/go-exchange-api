@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
 	"github.com/kiberdruzhinnik/go-exchange-api/constants"
@@ -49,6 +50,17 @@ type MoexPriceJSON struct {
 	} `json:"marketdata"`
 }
 
+type MoexCbrfPriceJSON struct {
+	Cbrf struct {
+		Columns []string `json:"columns"`
+		Data    [][]any  `json:"data"`
+	} `json:"cbrf"`
+	WapRates struct {
+		Columns []string `json:"columns"`
+		Data    [][]any  `json:"data"`
+	} `json:"wap_rates"`
+}
+
 func NewMoexAPI(redis utils.RedisClient) MoexAPI {
 	return MoexAPI{
 		BaseURL: constants.MoexBaseApiURL,
@@ -56,7 +68,7 @@ func NewMoexAPI(redis utils.RedisClient) MoexAPI {
 	}
 }
 
-func (api *MoexAPI) GetTicker(ticker string) (HistoryEntries, error) {
+func (api *MoexAPI) getRegularTicker(ticker string) (HistoryEntries, error) {
 	security, err := api.getSecurityParameters(ticker)
 	if err != nil {
 		log.Println(err)
@@ -97,6 +109,56 @@ func (api *MoexAPI) GetTicker(ticker string) (HistoryEntries, error) {
 	}
 
 	return history, err
+}
+
+func (api *MoexAPI) getCbrfTicker(ticker string) (HistoryEntries, error) {
+
+	if ticker != "cbrf_usd" && ticker != "cbrf_eur" {
+		return HistoryEntries{}, custom_errors.ErrorNotFound
+	}
+
+	url := fmt.Sprintf("%s/iss/statistics/engines/currency/markets/selt/rates.json?iss.meta=off&"+
+		"cbrf.columns=CBRF_USD_LAST,CBRF_USD_TRADEDATE,CBRF_EUR_LAST,CBRF_EUR_TRADEDATE",
+		api.BaseURL)
+
+	log.Printf("Fetching price data from url %s for %s\n", url, ticker)
+	data, err := utils.HttpGet(url)
+	if err != nil {
+		return HistoryEntries{}, err
+	}
+
+	var moexCbrfJSON MoexCbrfPriceJSON
+	err = json.Unmarshal(data, &moexCbrfJSON)
+	if err != nil {
+		return HistoryEntries{}, err
+	}
+
+	var moexHistoryEntry HistoryEntry
+	if ticker == "cbrf_usd" {
+		moexHistoryEntry.Close = utils.GetFloat64(moexCbrfJSON.Cbrf.Data[0][0])
+		time, err := time.Parse("2006-01-02", moexCbrfJSON.Cbrf.Data[0][1].(string))
+		if err != nil {
+			return HistoryEntries{}, err
+		}
+		moexHistoryEntry.Date = time
+	} else if ticker == "cbrf_eur" {
+		moexHistoryEntry.Close = utils.GetFloat64(moexCbrfJSON.Cbrf.Data[0][2])
+		time, err := time.Parse("2006-01-02", moexCbrfJSON.Cbrf.Data[0][3].(string))
+		if err != nil {
+			return HistoryEntries{}, err
+		}
+		moexHistoryEntry.Date = time
+	}
+
+	return HistoryEntries{moexHistoryEntry}, nil
+
+}
+
+func (api *MoexAPI) GetTicker(ticker string) (HistoryEntries, error) {
+	if strings.HasPrefix(ticker, "cbrf_") {
+		return api.getCbrfTicker(ticker)
+	}
+	return api.getRegularTicker(ticker)
 }
 
 func (api *MoexAPI) getSecurityParametersFromCache(ticker string) (MoexSecurityParameters, error) {
@@ -307,8 +369,8 @@ func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityPa
 			if entry[1] == nil {
 				return HistoryEntry{}, custom_errors.ErrorNoData
 			}
+
 			var moexHistory HistoryEntry
-			moexHistory.Close = utils.GetFloat64(entry[1])
 
 			if entry[2] != nil {
 				moexHistory.High = utils.GetFloat64(entry[2].(float64))

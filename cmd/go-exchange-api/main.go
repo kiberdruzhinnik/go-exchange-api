@@ -48,6 +48,7 @@ func SanitizedParam(c *gin.Context, param string) string {
 
 func getBaseTicker(c *gin.Context, apiGetTicker func(string) (api.HistoryEntries, error)) {
 	ticker := SanitizedParam(c, "ticker")
+	log.Printf("Got ticker %s\n", ticker)
 	data, err := apiGetTicker(ticker)
 	if err != nil {
 		if err == custom_errors.ErrorNotFound {
