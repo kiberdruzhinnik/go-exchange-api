@@ -62,8 +62,6 @@ func (api *CbrAPI) GetTicker(ticker string) (HistoryEntries, error) {
 		CBR_CURRENCIES[ticker],
 	)
 
-	fmt.Println(url)
-
 	resp, err := http.Get(url)
 	if err != nil {
 		log.Printf("Error making request: %v\n", err)
