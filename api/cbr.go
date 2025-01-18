@@ -61,8 +61,18 @@ func (api *CbrAPI) GetTicker(ticker string) (HistoryEntries, error) {
 		endDate.Format(dateFormat),
 		CBR_CURRENCIES[ticker],
 	)
+	log.Printf("Getting data from %s\n", url)
 
-	resp, err := http.Get(url)
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		log.Printf("Error creating request: %v\n", err)
+		return HistoryEntries{}, err
+	}
+
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
+
+	client := &http.Client{}
+	resp, err := client.Do(req)
 	if err != nil {
 		log.Printf("Error making request: %v\n", err)
 		return HistoryEntries{}, err
@@ -98,6 +108,7 @@ func (api *CbrAPI) GetTicker(ticker string) (HistoryEntries, error) {
 		valueStr := strings.Replace(valCurs.Records[i].VunitRate, ",", ".", -1)
 		value, err := strconv.ParseFloat(valueStr, 64)
 		if err != nil {
+			log.Printf("Error parsing value: %v\n", err)
 			continue
 		}
 		historyEntries[i].Close = value
