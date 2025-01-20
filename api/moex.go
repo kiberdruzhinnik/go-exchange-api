@@ -386,7 +386,10 @@ func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityPa
 				moexHistory.Volume = 0
 			}
 
-			moexHistory.Date = time.Now().UTC()
+			now := time.Now().UTC()
+			year, month, day := now.Date()
+
+			moexHistory.Date = time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
 
 			return moexHistory, nil
 		}
