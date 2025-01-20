@@ -365,34 +365,38 @@ func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityPa
 	}
 
 	for _, entry := range moexPriceJSON.Marketdata.Data {
-		if entry[0] == params.Board {
-			if entry[1] == nil {
-				return HistoryEntry{}, custom_errors.ErrorNoData
-			}
-
-			var moexHistory HistoryEntry
-
-			if entry[2] != nil {
-				moexHistory.High = utils.GetFloat64(entry[2].(float64))
-			}
-
-			if entry[3] != nil {
-				moexHistory.Low = utils.GetFloat64(entry[3])
-			}
-
-			if len(entry) > 4 && entry[4] != nil {
-				moexHistory.Volume = uint64(utils.GetFloat64(entry[4]))
-			} else {
-				moexHistory.Volume = 0
-			}
-
-			now := time.Now().UTC()
-			year, month, day := now.Date()
-
-			moexHistory.Date = time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
-
-			return moexHistory, nil
+		if entry[0] != params.Board {
+			continue
 		}
+
+		var moexHistory HistoryEntry
+
+		if entry[1] == nil {
+			return HistoryEntry{}, custom_errors.ErrorNoData
+		} else {
+			moexHistory.Close = utils.GetFloat64(entry[1].(float64))
+		}
+
+		if entry[2] != nil {
+			moexHistory.High = utils.GetFloat64(entry[2].(float64))
+		}
+
+		if entry[3] != nil {
+			moexHistory.Low = utils.GetFloat64(entry[3])
+		}
+
+		if len(entry) > 4 && entry[4] != nil {
+			moexHistory.Volume = uint64(utils.GetFloat64(entry[4]))
+		} else {
+			moexHistory.Volume = 0
+		}
+
+		now := time.Now().UTC()
+		year, month, day := now.Date()
+
+		moexHistory.Date = time.Date(year, month, day, 0, 0, 0, 0, time.UTC)
+
+		return moexHistory, nil
 	}
 
 	return HistoryEntry{}, custom_errors.ErrorNotFound
