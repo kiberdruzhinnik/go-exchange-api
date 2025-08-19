@@ -4,7 +4,7 @@ COPY go.mod go.sum ./
 RUN go mod download
 RUN go mod tidy
 COPY . ./
-RUN go build -ldflags "-s -w" -o go-exchange-api cmd/go-exchange-api/main.go
+RUN go build -ldflags "-s -w" GOEXPERIMENT=greenteagc -o go-exchange-api cmd/go-exchange-api/main.go
 RUN go build -ldflags "-s -w" -o healthcheck cmd/healthcheck/main.go
 
 FROM gcr.io/distroless/base-debian12:nonroot
