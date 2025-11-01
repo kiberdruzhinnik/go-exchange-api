@@ -8,11 +8,33 @@ on:
 
 jobs:
 
-  build:
-
+  build-and-push:
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v4
-    - name: Build the Docker image
-      run: docker build . --file Dockerfile --tag ghcr.io/kiberdruzhinnik/go-exchange-api:$(date +%s) --tag ghcr.io/kiberdruzhinnik/go-exchange-api:latest
+
+    # Step to get the next semantic version
+    - name: Auto Increment Semver Action
+      id: semver
+      uses: MCKanpolat/auto-semver-action@v2
+      with:
+        releaseType: patch  # can be major, minor, patch - choose based on your policy
+        incrementPerCommit: false
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Log in to GitHub Container Registry
+      uses: docker/login-action@v2
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v4
+      with:
+        context: .
+        file: Dockerfile
+        push: true
+        tags: |
+          ghcr.io/kiberdruzhinnik/go-exchange-api:${{ steps.semver.outputs.version }}
+          ghcr.io/kiberdruzhinnik/go-exchange-api:latest
