@@ -6,7 +6,7 @@ toolchain go1.24.1
 
 require (
 	github.com/gin-gonic/gin v1.11.0
-	github.com/redis/go-redis/v9 v9.14.0
+	github.com/redis/go-redis/v9 v9.16.0
 	golang.org/x/text v0.30.0
 )
 
