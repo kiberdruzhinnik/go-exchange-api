@@ -36,5 +36,5 @@ jobs:
         file: Dockerfile
         push: true
         tags: |
-          ghcr.io/kiberdruzhinnik/go-exchange-api:${{ steps.semver.outputs.version }}
-          ghcr.io/kiberdruzhinnik/go-exchange-api:latest
+          ghcr.io/${{ github.repository }}:${{ steps.semver.outputs.version }}
+          ghcr.io/${{ github.repository }}:latest
