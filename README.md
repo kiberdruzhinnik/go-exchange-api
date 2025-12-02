@@ -34,7 +34,7 @@ services:
       start_period: 30s
 
   exchange-api:
-    image: kotasha/go-exchange-api:latest
+    image: ghcr.io/kiberdruzhinnik/go-exchange-api:latest
     environment:
       EXCHANGE_API_REDIS: redis://redis-cache:6379/0
     ports:
