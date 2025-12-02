@@ -26,6 +26,7 @@ jobs:
       - name: Get latest tag
         id: get_tag
         run: |
+          # Get latest tag, fallback to 0.0.0 if none exist
           TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "0.0.0")
           echo "latest=$TAG" >> $GITHUB_OUTPUT
 
@@ -33,10 +34,10 @@ jobs:
         id: semver
         run: |
           TAG="${{ steps.get_tag.outputs.latest }}"
-          VERSION="${TAG#v}"
+          VERSION="$TAG"
           IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
           PATCH=$((PATCH + 1))
-          NEW="v$MAJOR.$MINOR.$PATCH"
+          NEW="$MAJOR.$MINOR.$PATCH"
           echo "version=$NEW" >> $GITHUB_OUTPUT
 
       - name: Create and push new tag
