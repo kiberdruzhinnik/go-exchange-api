@@ -2,39 +2,61 @@ name: Docker Image CI
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
+
+permissions:
+  contents: write
+  packages: write
 
 jobs:
-
-  build-and-push:
+  bump-and-build:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
     steps:
-    - uses: actions/checkout@v6
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
-    # Step to get the next semantic version
-    - name: Auto Increment Semver Action
-      id: semver
-      uses: MCKanpolat/auto-semver-action@v2
-      with:
-        releaseType: patch  # can be major, minor, patch - choose based on your policy
-        incrementPerCommit: false
-        github_token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Fetch tags
+        run: git fetch --tags
 
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v3
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Get latest tag
+        id: get_tag
+        run: |
+          TAG=$(git describe --tags `git rev-list --tags --max-count=1` 2>/dev/null || echo "v0.0.0")
+          echo "latest=$TAG" >> $GITHUB_OUTPUT
 
-    - name: Build and push Docker image
-      uses: docker/build-push-action@v6
-      with:
-        context: .
-        file: Dockerfile
-        push: true
-        tags: |
-          ghcr.io/${{ github.repository }}:${{ steps.semver.outputs.version }}
-          ghcr.io/${{ github.repository }}:latest
+      - name: Calculate next patch version
+        id: semver
+        run: |
+          TAG="${{ steps.get_tag.outputs.latest }}"
+          VERSION="${TAG#v}"
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$VERSION"
+          PATCH=$((PATCH + 1))
+          NEW="v$MAJOR.$MINOR.$PATCH"
+          echo "version=$NEW" >> $GITHUB_OUTPUT
+
+      - name: Create and push new tag
+        run: |
+          git tag "${{ steps.semver.outputs.version }}"
+          git push origin "${{ steps.semver.outputs.version }}"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.semver.outputs.version }}
+            ghcr.io/${{ github.repository }}:latest
