@@ -35,7 +35,7 @@ jobs:
           docker build -t docker.io/kotasha/go-exchange-api:${{ github.sha }} .
 
       - name: Run Trivy vulnerability scanner
-        uses: aquasecurity/trivy-action@b6643a29fecd7f34b3597bc6acb0a98b03d33ff8
+        uses: aquasecurity/trivy-action@e368e328979b113139d6f9068e03accaed98a518
         with:
           image-ref: 'docker.io/kotasha/go-exchange-api:${{ github.sha }}'
           format: 'sarif'
