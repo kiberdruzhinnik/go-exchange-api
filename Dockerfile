@@ -7,7 +7,7 @@ COPY . ./
 RUN GOEXPERIMENT=greenteagc go build -ldflags "-s -w" -o go-exchange-api cmd/go-exchange-api/main.go
 RUN go build -ldflags "-s -w" -o healthcheck cmd/healthcheck/main.go
 
-FROM gcr.io/distroless/base-debian12:nonroot
+FROM gcr.io/distroless/base-debian13:nonroot
 ENV GIN_MODE release
 WORKDIR /app
 COPY --from=builder /src/app/go-exchange-api ./go-exchange-api
