@@ -14,6 +14,7 @@ import (
 var URLS_ALLOW_LIST []string = []string{
 	constants.MoexBaseApiURL,
 	constants.SpbexBaseApiURL,
+	constants.CbrBaseApiURL,
 }
 
 func CheckSafeURL(url string) bool {

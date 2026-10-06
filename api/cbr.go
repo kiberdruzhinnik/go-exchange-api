@@ -1,11 +1,11 @@
 package api
 
 import (
+	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
-	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -56,30 +56,21 @@ func (api *CbrAPI) GetTicker(ticker string) (HistoryEntries, error) {
 	dateFormat := "02/01/2006"
 
 	url := fmt.Sprintf(
-		"https://www.cbr.ru/scripts/XML_dynamic.asp?date_req1=%s&date_req2=%s&VAL_NM_RQ=%s",
+		"%s/scripts/XML_dynamic.asp?date_req1=%s&date_req2=%s&VAL_NM_RQ=%s",
+		api.BaseURL,
 		startDate.Format(dateFormat),
 		endDate.Format(dateFormat),
 		CBR_CURRENCIES[ticker],
 	)
 	log.Printf("Getting data from %s\n", url)
 
-	req, err := http.NewRequest("GET", url, nil)
+	data, err := utils.HttpGet(url)
 	if err != nil {
-		log.Printf("Error creating request: %v\n", err)
+		log.Printf("Error fetching CBR data: %v\n", err)
 		return HistoryEntries{}, err
 	}
 
-	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36")
-
-	client := &http.Client{}
-	resp, err := client.Do(req)
-	if err != nil {
-		log.Printf("Error making request: %v\n", err)
-		return HistoryEntries{}, err
-	}
-	defer resp.Body.Close()
-
-	d := xml.NewDecoder(resp.Body)
+	d := xml.NewDecoder(bytes.NewReader(data))
 	d.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
 		switch charset {
 		case "windows-1251":
