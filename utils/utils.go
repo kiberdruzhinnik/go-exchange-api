@@ -2,7 +2,6 @@ package utils
 
 import (
 	"io"
-	"net/http"
 	"strconv"
 	"strings"
 	"unicode"
@@ -32,7 +31,11 @@ func HttpGet(url string) ([]byte, error) {
 		return nil, errors.ErrorNotAllowed
 	}
 
-	resp, err := http.Get(url)
+	client, err := NewHTTPClient()
+	if err != nil {
+		return nil, err
+	}
+	resp, err := client.Get(url)
 
 	if err != nil {
 		return []byte{}, err

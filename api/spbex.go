@@ -14,6 +14,7 @@ import (
 
 	"github.com/kiberdruzhinnik/go-exchange-api/constants"
 	custom_errors "github.com/kiberdruzhinnik/go-exchange-api/errors"
+	"github.com/kiberdruzhinnik/go-exchange-api/utils"
 )
 
 type SpbexAPI struct {
@@ -59,7 +60,10 @@ func (api *SpbexAPI) getHistory(ticker string, from, to int64) (HistoryEntries, 
 		"from": {strconv.FormatInt(from, 10)}, "to": {strconv.FormatInt(to, 10)},
 	}
 	endpoint := strings.TrimRight(api.BaseURL, "/") + "/reader/marketdata/charts/chistory?" + query.Encode()
-	client := &http.Client{Timeout: 30 * time.Second}
+	client, err := utils.NewHTTPClient()
+	if err != nil {
+		return nil, err
+	}
 	resp, err := client.Get(endpoint)
 	if err != nil {
 		return nil, fmt.Errorf("SPB Exchange history: %w", err)

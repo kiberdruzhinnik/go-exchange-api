@@ -1,10 +1,10 @@
 package main
 
 import (
-	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
+	"net/http"
 	"time"
 
 	"github.com/kiberdruzhinnik/go-exchange-api/constants"
@@ -40,13 +40,24 @@ func main() {
 	)
 
 	// Make the HTTP request
-	data, err := utils.HttpGet(url)
+	client, err := utils.NewHTTPClient()
+	if err != nil {
+		fmt.Printf("Error creating HTTP client: %v\n", err)
+		return
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		fmt.Printf("Error making request: %v\n", err)
 		return
 	}
 
-	d := xml.NewDecoder(bytes.NewReader(data))
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		fmt.Printf("Error fetching CBR data: HTTP %d\n", resp.StatusCode)
+		return
+	}
+
+	d := xml.NewDecoder(resp.Body)
 	d.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
 		switch charset {
 		case "windows-1251":

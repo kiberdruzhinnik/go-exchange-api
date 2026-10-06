@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"strings"
 	"time"
 
@@ -122,13 +123,24 @@ func (api *MoexAPI) getCbrfTicker(ticker string) (HistoryEntries, error) {
 		api.BaseURL)
 
 	log.Printf("Fetching price data from url %s for %s\n", url, ticker)
-	data, err := utils.HttpGet(url)
+	if !utils.CheckSafeURL(url) {
+		return HistoryEntries{}, custom_errors.ErrorNotAllowed
+	}
+	client, err := utils.NewHTTPClient()
 	if err != nil {
 		return HistoryEntries{}, err
 	}
+	resp, err := client.Get(url)
+	if err != nil {
+		return HistoryEntries{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return HistoryEntries{}, fmt.Errorf("MOEX: HTTP %d", resp.StatusCode)
+	}
 
 	var moexCbrfJSON MoexCbrfPriceJSON
-	err = json.Unmarshal(data, &moexCbrfJSON)
+	err = json.NewDecoder(resp.Body).Decode(&moexCbrfJSON)
 	if err != nil {
 		return HistoryEntries{}, err
 	}
@@ -202,12 +214,23 @@ func (api *MoexAPI) getSecurityParameters(ticker string) (MoexSecurityParameters
 	}
 
 	log.Printf("Getting security parameters data from url %s for %s\n", url, ticker)
-	data, err := utils.HttpGet(url)
+	if !utils.CheckSafeURL(url) {
+		return MoexSecurityParameters{}, custom_errors.ErrorNotAllowed
+	}
+	client, err := utils.NewHTTPClient()
+	if err != nil {
+		return MoexSecurityParameters{}, err
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return MoexSecurityParameters{}, custom_errors.ErrorCouldNotFetchData
 	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return MoexSecurityParameters{}, fmt.Errorf("MOEX: HTTP %d", resp.StatusCode)
+	}
 
-	err = json.Unmarshal(data, &moexJson)
+	err = json.NewDecoder(resp.Body).Decode(&moexJson)
 	if err != nil {
 		return MoexSecurityParameters{}, custom_errors.ErrorCouldNotParseJSON
 	}
@@ -278,13 +301,25 @@ func (api *MoexAPI) getSecurityHistoryOffset(ticker string,
 	}
 
 	log.Printf("Fetching history data from url %s for %s\n", url, ticker)
-	data, err := utils.HttpGet(url)
+	if !utils.CheckSafeURL(url) {
+		return HistoryEntries{}, custom_errors.ErrorNotAllowed
+	}
+	client, err := utils.NewHTTPClient()
+	if err != nil {
+		return HistoryEntries{}, err
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		return HistoryEntries{}, err
 	}
 
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return HistoryEntries{}, fmt.Errorf("MOEX: HTTP %d", resp.StatusCode)
+	}
+
 	var moexHistoryJSON MoexHistoryJSON
-	err = json.Unmarshal(data, &moexHistoryJSON)
+	err = json.NewDecoder(resp.Body).Decode(&moexHistoryJSON)
 	if err != nil {
 		return HistoryEntries{}, err
 	}
@@ -353,13 +388,24 @@ func (api *MoexAPI) getSecurityCurrentPrice(ticker string, params MoexSecurityPa
 		api.BaseURL, params.Engine, params.Market, ticker,
 	)
 	log.Printf("Fetching price data from url %s for %s\n", url, ticker)
-	data, err := utils.HttpGet(url)
+	if !utils.CheckSafeURL(url) {
+		return HistoryEntry{}, custom_errors.ErrorNotAllowed
+	}
+	client, err := utils.NewHTTPClient()
 	if err != nil {
 		return HistoryEntry{}, err
 	}
+	resp, err := client.Get(url)
+	if err != nil {
+		return HistoryEntry{}, err
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return HistoryEntry{}, fmt.Errorf("MOEX: HTTP %d", resp.StatusCode)
+	}
 
 	var moexPriceJSON MoexPriceJSON
-	err = json.Unmarshal(data, &moexPriceJSON)
+	err = json.NewDecoder(resp.Body).Decode(&moexPriceJSON)
 	if err != nil {
 		return HistoryEntry{}, err
 	}

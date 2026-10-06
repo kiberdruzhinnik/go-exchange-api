@@ -1,11 +1,11 @@
 package api
 
 import (
-	"bytes"
 	"encoding/xml"
 	"fmt"
 	"io"
 	"log"
+	"net/http"
 	"strconv"
 	"strings"
 	"time"
@@ -64,13 +64,25 @@ func (api *CbrAPI) GetTicker(ticker string) (HistoryEntries, error) {
 	)
 	log.Printf("Getting data from %s\n", url)
 
-	data, err := utils.HttpGet(url)
+	if !utils.CheckSafeURL(url) {
+		return HistoryEntries{}, custom_errors.ErrorNotAllowed
+	}
+	client, err := utils.NewHTTPClient()
+	if err != nil {
+		return HistoryEntries{}, err
+	}
+	resp, err := client.Get(url)
 	if err != nil {
 		log.Printf("Error fetching CBR data: %v\n", err)
 		return HistoryEntries{}, err
 	}
 
-	d := xml.NewDecoder(bytes.NewReader(data))
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		return HistoryEntries{}, fmt.Errorf("CBR: HTTP %d", resp.StatusCode)
+	}
+
+	d := xml.NewDecoder(resp.Body)
 	d.CharsetReader = func(charset string, input io.Reader) (io.Reader, error) {
 		switch charset {
 		case "windows-1251":
