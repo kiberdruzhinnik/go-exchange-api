@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/kiberdruzhinnik/go-exchange-api/api"
+	"github.com/kiberdruzhinnik/go-exchange-api/constants"
 	customerrors "github.com/kiberdruzhinnik/go-exchange-api/errors"
 )
 
@@ -17,6 +18,10 @@ func TestCbrGetTickerParsesCurrencyHistory(t *testing.T) {
 		}
 		if got := req.URL.Query().Get("VAL_NM_RQ"); got != "R01235" {
 			t.Errorf("VAL_NM_RQ = %q, want %q", got, "R01235")
+		}
+		if got := req.Header.Get("User-Agent"); got != constants.BrowserUserAgent {
+			t.Errorf("User-Agent = %q, want %q", got, constants.BrowserUserAgent)
+			return response(req, http.StatusForbidden, "missing browser User-Agent"), nil
 		}
 		body := `<ValCurs Date="06.02.2024" name="Foreign Currency Market"><Record Date="05.02.2024"><Nominal>1</Nominal><Value>91,50</Value><VunitRate>91,5000</VunitRate></Record></ValCurs>`
 		return response(req, http.StatusOK, body), nil

@@ -8,6 +8,8 @@ import (
 	"net/http"
 	"sync"
 	"time"
+
+	"github.com/kiberdruzhinnik/go-exchange-api/constants"
 )
 
 //go:embed certs/*.crt
@@ -34,7 +36,8 @@ var trustedRoots = sync.OnceValues(func() (*x509.CertPool, error) {
 // process-wide transport or its TLS settings.
 var trustedTransports sync.Map
 
-// NewHTTPClient retains system CAs and adds the bundled Russian Trusted CAs.
+// NewHTTPClient sets the browser User-Agent on every request and retains system
+// CAs alongside the bundled Russian Trusted CAs.
 // Custom default RoundTrippers are preserved; they control their own TLS setup.
 func NewHTTPClient() (*http.Client, error) {
 	transport := http.DefaultTransport
@@ -55,5 +58,28 @@ func NewHTTPClient() (*http.Client, error) {
 			transport = cached.(*http.Transport)
 		}
 	}
-	return &http.Client{Transport: transport, Timeout: 30 * time.Second}, nil
+	return &http.Client{Transport: &userAgentTransport{base: transport}, Timeout: 30 * time.Second}, nil
+}
+
+// userAgentTransport also applies the header to redirected requests.
+type userAgentTransport struct {
+	base http.RoundTripper
+}
+
+func (transport *userAgentTransport) RoundTrip(request *http.Request) (*http.Response, error) {
+	// RoundTrippers must not modify the caller's request or headers.
+	request = request.Clone(request.Context())
+	request.Header.Set("User-Agent", constants.BrowserUserAgent)
+	return transport.base.RoundTrip(request)
+}
+
+// Unwrap provides access to the underlying transport for diagnostics.
+func (transport *userAgentTransport) Unwrap() http.RoundTripper {
+	return transport.base
+}
+
+func (transport *userAgentTransport) CloseIdleConnections() {
+	if base, ok := transport.base.(interface{ CloseIdleConnections() }); ok {
+		base.CloseIdleConnections()
+	}
 }

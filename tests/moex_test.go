@@ -7,11 +7,15 @@ import (
 	"time"
 
 	"github.com/kiberdruzhinnik/go-exchange-api/api"
+	"github.com/kiberdruzhinnik/go-exchange-api/constants"
 	"github.com/kiberdruzhinnik/go-exchange-api/utils"
 )
 
 func TestMoexGetTickerParsesHistoryAndCurrentQuote(t *testing.T) {
 	useTransport(t, roundTripFunc(func(req *http.Request) (*http.Response, error) {
+		if got := req.UserAgent(); got != constants.BrowserUserAgent {
+			t.Errorf("User-Agent = %q, want %q", got, constants.BrowserUserAgent)
+		}
 		switch {
 		case strings.HasSuffix(req.URL.Path, "/iss/securities/sber.json"):
 			return response(req, http.StatusOK, `{"boards":{"columns":["boardid","market","engine","is_primary"],"data":[["TQBR","shares","stock",1]]}}`), nil

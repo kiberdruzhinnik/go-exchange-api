@@ -11,6 +11,7 @@ import (
 	"os"
 	"testing"
 
+	"github.com/kiberdruzhinnik/go-exchange-api/constants"
 	"github.com/kiberdruzhinnik/go-exchange-api/utils"
 )
 
@@ -19,7 +20,11 @@ func TestHTTPClientIncludesRussianTrustedCertificates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	transport, ok := client.Transport.(*http.Transport)
+	wrapped, ok := client.Transport.(interface{ Unwrap() http.RoundTripper })
+	if !ok {
+		t.Fatalf("unexpected transport wrapper: %T", client.Transport)
+	}
+	transport, ok := wrapped.Unwrap().(*http.Transport)
 	if !ok {
 		t.Fatalf("unexpected transport: %T", client.Transport)
 	}
@@ -89,5 +94,40 @@ func TestHTTPClientRejectsUntrustedServer(t *testing.T) {
 	}
 	if err == nil {
 		t.Fatal("expected rejection of an untrusted server certificate")
+	}
+}
+
+func TestHTTPClientSetsBrowserUserAgentAndPreservesRequest(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if got := r.UserAgent(); got != constants.BrowserUserAgent {
+			t.Errorf("User-Agent = %q, want %q", got, constants.BrowserUserAgent)
+		}
+		if r.URL.Path == "/redirect" {
+			http.Redirect(w, r, "/final", http.StatusFound)
+			return
+		}
+		w.Write([]byte("ok"))
+	}))
+	defer server.Close()
+	client, err := utils.NewHTTPClient()
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, userAgent := range []string{"", "custom-agent"} {
+		request, err := http.NewRequest(http.MethodGet, server.URL+"/redirect", nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if userAgent != "" {
+			request.Header.Set("User-Agent", userAgent)
+		}
+		response, err := client.Do(request)
+		if err != nil {
+			t.Fatal(err)
+		}
+		response.Body.Close()
+		if got := request.UserAgent(); got != userAgent {
+			t.Errorf("caller request modified: User-Agent = %q, want %q", got, userAgent)
+		}
 	}
 }

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	exchangeapi "github.com/kiberdruzhinnik/go-exchange-api/api"
+	"github.com/kiberdruzhinnik/go-exchange-api/constants"
 	custom_errors "github.com/kiberdruzhinnik/go-exchange-api/errors"
 )
 
@@ -15,6 +16,9 @@ func TestSpbexHistoryAndCurrentPrice(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/reader/marketdata/charts/chistory" || r.URL.Query().Get("symbol") != "SPBE&OTHER" || r.URL.Query().Get("resolution") != "1440" || r.URL.Query().Get("from") != "0" || r.URL.Query().Get("to") == "" {
 			t.Errorf("unexpected request: %s", r.URL)
+		}
+		if got := r.UserAgent(); got != constants.BrowserUserAgent {
+			t.Errorf("User-Agent = %q, want %q", got, constants.BrowserUserAgent)
 		}
 		w.Header().Set("Content-Type", "application/json")
 		// Deliberately unsorted: the latest quote must be chosen by its timestamp.
