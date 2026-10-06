@@ -1,11 +1,11 @@
 module github.com/kiberdruzhinnik/go-exchange-api
 
-go 1.25.0
+go 1.26.0
 
 require (
 	github.com/gin-gonic/gin v1.12.0
 	github.com/redis/go-redis/v9 v9.21.0
-	golang.org/x/text v0.40.0
+	golang.org/x/text v0.42.0
 )
 
 require (
